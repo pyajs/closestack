@@ -1,0 +1,4 @@
+Django==2.0.5
+libvirt-python==4.3.0
+psycopg2-binary==2.7.4
+pytz==2018.4
