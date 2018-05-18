@@ -13,6 +13,8 @@ import os
 __author__ = 'knktc'
 __version__ = '0.1'
 
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+
 # QEMU commands
 '''
 QEMU commands config notes:
@@ -61,3 +63,5 @@ VM_NODES = {
 
 }
 
+# VM config xml template
+VM_TEMPLATE_FILEPATH = os.path.join(SCRIPT_DIR, 'vm_templates/vm_template.xml')
