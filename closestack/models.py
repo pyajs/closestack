@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# models
 
 """
 @author:knktc
@@ -14,8 +15,22 @@ __author__ = 'knktc'
 __version__ = '0.1'
 
 
+# VM templates
+class VmTemplate(models.Model):
+    name = models.CharField(max_length=64, unique=True)
+    enable = models.BooleanField(default=True)
+    image_path = models.CharField(max_length=1024)
+    # required vm config
+    config = JSONField()
+    create_time = models.DateTimeField()
+    update_time = models.DateTimeField(auto_now=True)
+    note = models.TextField(null=True, blank=True)
+
+
+# store recorded VMs' info
 class VmRunning(models.Model):
-    vm_name = models.CharField(max_length=64, unique=True)
+    name = models.CharField(max_length=64, unique=True)
+    template = models.ForeignKey(VmTemplate, on_delete=models.PROTECT)
     state = models.IntegerField(choices=(
         (0, 'pending'),
         (1, 'stopped'),
@@ -31,4 +46,3 @@ class VmRunning(models.Model):
     create_time = models.DateTimeField()
     update_time = models.DateTimeField(auto_now=True)
     note = models.TextField(null=True, blank=True)
-
