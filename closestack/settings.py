@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 from .errors import ERRORS
-from config import VM_NODES, VM_TEMPLATE_FILEPATH, NOVNC_TOKEN_DIR, NOVNC_HOST, NOVNC_PORT, DEBUG
+from config import VM_NODES, VM_TEMPLATE_FILEPATH, NOVNC_TOKEN_DIR, NOVNC_HOST, NOVNC_PORT, DEBUG, DATABASE as DB_CONF
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'closestack',
 ]
 
 MIDDLEWARE = [
@@ -78,10 +79,10 @@ WSGI_APPLICATION = 'closestack.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql',
     }
 }
+DATABASES['default'].update(DB_CONF)
 
 
 # Password validation
