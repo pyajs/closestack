@@ -17,7 +17,7 @@ __version__ = '0.1'
 class NodeManager(object):
     def __init__(self, nodes):
         """
-
+        init
         :param :
         :return:
         :rtype:
@@ -37,7 +37,7 @@ class NodeManager(object):
 
     def add_node(self):
         """
-
+        add node, not implemented yet
         :param :
         :return:
         :rtype:
@@ -46,7 +46,7 @@ class NodeManager(object):
 
     def remove_node(self):
         """
-
+        remove node, not implemented yet
         :param :
         :return:
         :rtype:

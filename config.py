@@ -15,6 +15,18 @@ __version__ = '0.1'
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
+# debug mode
+DEBUG = True
+
+# database config, only support PostgreSQL(version 9.3 or later) right now
+DATABASE = {
+    'NAME': 'db_name',
+    'USER': 'db_user',
+    'PASSWORD': 'db_password',
+    'HOST': '127.0.0.1',
+    'PORT': '5432'
+}
+
 # QEMU commands
 '''
 QEMU commands config notes:
