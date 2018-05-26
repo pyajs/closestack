@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 from .errors import ERRORS
-from config import VM_NODES, VM_TEMPLATE_FILEPATH, NOVNC_TOKEN_DIR, NOVNC_HOST, NOVNC_PORT
+from config import VM_NODES, VM_TEMPLATE_FILEPATH, NOVNC_TOKEN_DIR, NOVNC_HOST, NOVNC_PORT, DEBUG
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'l0rda7at&-o2@r6hgx1cp+f2xvy4apl#%7q33uf#x-zq1bi%m&'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = DEBUG
 
 ALLOWED_HOSTS = []
 

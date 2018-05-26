@@ -15,6 +15,9 @@ __version__ = '0.1'
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
+# debug mode
+DEBUG = True
+
 # QEMU commands
 '''
 QEMU commands config notes:
