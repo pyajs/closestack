@@ -13,6 +13,9 @@ __version__ = '0.1'
 
 
 ERRORS = {
-    # global errors
+    # success
     0: 'success',
+
+    # global errors
+
 }
