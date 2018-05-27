@@ -9,6 +9,8 @@
 
 import shlex
 import subprocess
+from jsonschema import validate
+from jsonschema.exceptions import ValidationError, SchemaError
 
 __author__ = 'knktc'
 __version__ = '0.1'
@@ -36,3 +38,30 @@ def cmd_runner(cmd, timeout=60):
         return 1, 'command timeout', None
     except subprocess.CalledProcessError as e:
         return 2, e.output, e.returncode
+
+
+def validate_json(data, schema):
+    """
+    use jsonschema to validate input data
+
+    :param data: data to be validated
+    :param schema: json schema
+    :return: validate result as status code and error message
+    :rtype: tuple
+
+    status
+    ========
+    0: success
+    1: data validate failed
+    2: schema validate failed
+    3: other error
+    """
+    try:
+        validate(data, schema)
+        return 0, None
+    except ValidationError as e:
+        return 1, "data error on field '{}': {}".format('.'.join(str(x) for x in e.path), e.message)
+    except SchemaError as e:
+        return 2, "schema error on field '{}': {}".format('.'.join(str(x) for x in e.path), e.message)
+    finally:
+        return 3, "other error"
