@@ -63,5 +63,3 @@ def validate_json(data, schema):
         return 1, "data error on field '{}': {}".format('.'.join(str(x) for x in e.path), e.message)
     except SchemaError as e:
         return 2, "schema error on field '{}': {}".format('.'.join(str(x) for x in e.path), e.message)
-    finally:
-        return 3, "other error"

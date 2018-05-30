@@ -17,5 +17,11 @@ ERRORS = {
     0: 'success',
 
     # global errors
+    1000000: 'unknown error',
+    1000001: 'malformed requests',
+
+    # vm template api errors
+    1001001: 'vm template names duplicated',
+
 
 }
