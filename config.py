@@ -78,8 +78,15 @@ VM_NODES = {
 # VM config xml template
 VM_TEMPLATE_FILEPATH = os.path.join(SCRIPT_DIR, 'vm_templates/vm_template.xml')
 
+# default(or minimum requirements for a vm)
+DEFAULT_VM_CONFIG = {
+    "cpu": 1,  # cores of cpu
+    "memory": 524288,  # memory(in KiB)
+}
+
 # NOVNC config
 NOVNC_TOKEN_DIR = '/dir/to/novnc/tokens'
 # novnc client in browser will use NOVNC_HOST, so you should use local machine's IP or hostname for this config
 NOVNC_HOST = 'novnc.host'
 NOVNC_PORT = 8787
+
