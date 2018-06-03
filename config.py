@@ -82,6 +82,7 @@ VM_TEMPLATE_FILEPATH = os.path.join(SCRIPT_DIR, 'vm_templates/vm_template.xml')
 DEFAULT_VM_CONFIG = {
     "cpu": 1,  # cores of cpu
     "memory": 524288,  # memory(in KiB)
+    "host_passthrough": False  # enable host passthrough
 }
 
 # NOVNC config
