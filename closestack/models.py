@@ -35,7 +35,7 @@ class VmTemplate(models.Model):
 # store recorded VMs' info
 class VmRunning(VmTemplate):
     enable = None
-    template = models.ForeignKey(VmTemplate, on_delete=models.PROTECT)
+    template = models.ForeignKey(VmTemplate, on_delete=models.PROTECT, related_name='template_name')
     state = models.IntegerField(choices=(
         (0, 'pending'),
         (1, 'stopped'),
@@ -45,5 +45,4 @@ class VmRunning(VmTemplate):
         (5, 'deleted'),
     ), default=0)
     node = models.CharField(max_length=64)
-    image_path = models.CharField(max_length=1024)
     vnc_token = models.CharField(max_length=64)

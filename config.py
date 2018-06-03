@@ -18,14 +18,24 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 # debug mode
 DEBUG = True
 
-# database config, only support PostgreSQL(version 9.3 or later) right now
+# database config
+# you can use sqlite3 as database, for debug and development only
 DATABASE = {
+    'ENGINE': 'django.db.backends.sqlite3',
+    'NAME': os.path.join(SCRIPT_DIR, 'db.sqlite3'),
+}
+
+# uncomment the following lines to use PostgreSQL as database server, recommanded for production deployment
+'''
+DATABASE = {
+    'ENGINE': 'django.db.backends.postgresql',
     'NAME': 'db_name',
     'USER': 'db_user',
     'PASSWORD': 'db_password',
     'HOST': '127.0.0.1',
     'PORT': '5432'
 }
+'''
 
 # QEMU commands
 '''
