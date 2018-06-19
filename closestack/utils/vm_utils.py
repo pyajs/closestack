@@ -57,8 +57,16 @@ class VmManager(object):
         try:
             domain = self.conn.lookupByName(vm_name)
             return domain
-        except:
+        except Exception as e:
             return None
 
+    def check_vm_existence(self, vm_name):
+        """
+        check vm existence
+        :param :
+        :return:
+        :rtype:
+        """
+        return self.get_domain_obj(vm_name=vm_name)
 
 
