@@ -9,6 +9,7 @@
 """
 
 import libvirt
+from .utils import cmd_runner
 from xml.etree import ElementTree
 
 __author__ = 'knktc'
@@ -63,10 +64,30 @@ class VmManager(object):
     def check_vm_existence(self, vm_name):
         """
         check vm existence
-        :param :
-        :return:
-        :rtype:
+        :param vm_name: vm name string
+        :return: domain object or None
+        :rtype: object
         """
         return self.get_domain_obj(vm_name=vm_name)
+
+    def create_image(self, base_image_path, new_image_path, host, ssh_port, ssh_user, timeout=120):
+        """
+        create image by base image, will use ssh to connect to other hosts and run commands
+        :param timeout: command timeout
+        :param ssh_user: ssh user
+        :param ssh_port: ssh port
+        :param host: the host we want to create image on
+        :param base_image_path: base image path
+        :param new_image_path: new image path
+        :return: boolean result of creation
+        :rtype: bool
+        """
+        cmd = '{} create -b {} -f qcow2 {}'.format(self.qemu_img_exec, base_image_path, new_image_path)
+        cmd = "ssh -p {} {}@{} {}".format(ssh_port, ssh_user, host, cmd)
+        code, stdout, stderr = cmd_runner(cmd=cmd, timeout=timeout)
+        if code == 0:
+            return True
+        else:
+            return False
 
 
