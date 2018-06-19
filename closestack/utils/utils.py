@@ -9,6 +9,7 @@
 
 import shlex
 import subprocess
+from string import Template
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError, SchemaError
 
@@ -63,3 +64,18 @@ def validate_json(data, schema):
         return 1, "data error on field '{}': {}".format('.'.join(str(x) for x in e.path), e.message)
     except SchemaError as e:
         return 2, "schema error on field '{}': {}".format('.'.join(str(x) for x in e.path), e.message)
+
+
+def format_vm_xml(template, config_dict):
+    """
+    format vm xml with template and vm config dict
+    :param config_dict: config dict, contains cpus, ram and other configs
+    :param template: template content
+    :return: formated xml
+    :rtype: str
+    """
+    try:
+        formated_xml = Template(template).substitute(config_dict)
+        return formated_xml
+    except:
+        return None
