@@ -26,7 +26,7 @@ class VmManagerError(Exception):
 
 class VmManager(object):
     def __init__(self, conn_str, qemu_img_exec,
-                 qemu_kvm_exec, template_path):
+                 qemu_kvm_exec, template_path, ssh_path='/usr/bin/ssh'):
         """
         connect to host
         :param :
@@ -36,6 +36,9 @@ class VmManager(object):
         self.conn_str = conn_str
         self.qemu_img_exec = qemu_img_exec
         self.qemu_kvm_exec = qemu_kvm_exec
+        self.ssh_path = ssh_path
+
+        # get template
         try:
             with open(template_path, 'r') as f:
                 self.template = f.read()
@@ -89,7 +92,7 @@ class VmManager(object):
         :rtype: bool
         """
         cmd = '{} create -b {} -f qcow2 {}'.format(self.qemu_img_exec, base_image_path, new_image_path)
-        cmd = "ssh -p {} {}@{} {}".format(ssh_port, ssh_user, host, cmd)
+        cmd = "{} -p {} {}@{} {}".format(self.ssh_path, ssh_port, ssh_user, host, cmd)
         code, stdout, stderr = cmd_runner(cmd=cmd, timeout=timeout)
         if code == 0:
             return True
