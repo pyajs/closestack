@@ -174,7 +174,7 @@ class VmManager(object):
         status
         ==========
         0: success
-        1: no such domain
+        1: no such vm
         2: destroy failed
         """
         # get domain object
@@ -200,8 +200,8 @@ class VmManager(object):
         status
         =========
         0: undefine success
-        1: vm not exsits
-        2: exception occurred
+        1: no such vm
+        2: exception occurred, undefine failed
         """
         # get domain object
         dom = self.get_domain_obj(vm_name=vm_name)
@@ -212,6 +212,32 @@ class VmManager(object):
         try:
             dom.undefine()
             return 0
-        except:
+        except Exception as e:
+            return 2
+
+    def start(self, vm_name):
+        """
+        start(boot) vm by name
+
+        :param vm_name: vm name string
+        :return: start result as status code
+        :rtype: int
+
+        status
+        =========
+        0: start success
+        1: no such vm
+        2: start vm failed
+        """
+        # get domain object
+        dom = self.get_domain_obj(vm_name=vm_name)
+        if dom is None:
+            return 1
+
+        # start vm
+        try:
+            dom.create()
+            return 0
+        except Exception as e:
             return 2
 
