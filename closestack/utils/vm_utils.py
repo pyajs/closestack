@@ -109,7 +109,7 @@ class VmManager(object):
         :param cpu_cores: cpu cores
         :param memory: ram size
         :param host_passthrough: if true, we will set host passthrough to vm xml
-        :param persistent: persistent or not
+        :param persistent: persistent or not, if set False, the vm will be undefined after destroy
         :param boot: if true, the vm will boot after vm defined
         :return: status code
         :rtype: int
@@ -119,7 +119,7 @@ class VmManager(object):
         0: success
         1: xml format failed
         2: create vm failed, unknown reason
-        3: vm successfully defined, but boot failed'
+        3: vm successfully defined, but boot failed
 
         """
         # config dict
@@ -162,4 +162,30 @@ class VmManager(object):
                 return 0
         else:
             return 0
+
+    def destroy(self, vm_name):
+        """
+        destroy vm by vm name
+
+        :param vm_name: vm name string
+        :return: destroy result as status code
+        :rtype: int
+
+        status
+        ==========
+        0 - success
+        1 - no such domain
+        2 - destroy failed
+        """
+        # get domain object
+        dom = self.get_domain_obj(vm_name=vm_name)
+        if dom is None:
+            return 1
+
+        # destroy vm
+        try:
+            dom.destroy()
+            return 0
+        except Exception as e:
+            return 2
 
