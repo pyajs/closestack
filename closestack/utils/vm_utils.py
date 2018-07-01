@@ -173,9 +173,9 @@ class VmManager(object):
 
         status
         ==========
-        0 - success
-        1 - no such domain
-        2 - destroy failed
+        0: success
+        1: no such domain
+        2: destroy failed
         """
         # get domain object
         dom = self.get_domain_obj(vm_name=vm_name)
@@ -187,5 +187,31 @@ class VmManager(object):
             dom.destroy()
             return 0
         except Exception as e:
+            return 2
+
+    def undefine(self, vm_name):
+        """
+        undefine vm by vm name
+
+        :param vm_name: vm name string
+        :return: undefine result as status code
+        :rtype: int
+
+        status
+        =========
+        0: undefine success
+        1: vm not exsits
+        2: exception occurred
+        """
+        # get domain object
+        dom = self.get_domain_obj(vm_name=vm_name)
+        if dom is None:
+            return 1
+
+        # undefine vm
+        try:
+            dom.undefine()
+            return 0
+        except:
             return 2
 
