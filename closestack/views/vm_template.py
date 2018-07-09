@@ -14,8 +14,6 @@ from json.decoder import JSONDecodeError
 from ..response import success, failed
 from ..models import VmTemplate
 from django.views import View
-from django.conf import settings
-from django.utils import timezone
 from django.db import IntegrityError
 
 __author__ = 'knktc'
@@ -61,27 +59,18 @@ class VmTemplateListView(View):
             return failed(status=1000001, msg=msg)
 
         # create new vm template
-        new_obj = VmTemplate(
-            name=request_content.get('name'),
-            enable=request_content.get('enable', True),
-            image_path=request_content.get('image_path'),
-            config=request_content.get('config', settings.DEFAULT_VM_CONFIG),
-            create_time=timezone.now(),
-            note=request_content.get('note')
-        )
+        new_obj = VmTemplate(**request_content)
 
         # save objects
         try:
             new_obj.save()
         except IntegrityError as e:
-            return failed(status=1001001)
+
+            return failed(status=1001001, msg=str(e.__cause__))
 
         # return data
-        data = {
-            'id': new_obj.id,
-            'name': new_obj.name,
-            'image_path': new_obj.image_path,
-        }
+        data = new_obj.__dict__
+        data.pop('_state')
         return success(data=data)
 
     @staticmethod

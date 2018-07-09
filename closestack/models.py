@@ -27,7 +27,7 @@ class VmTemplate(models.Model):
     cpu = models.IntegerField(default=DEFAULT_VM_CONFIG.get('cpu', 1))
     memory = models.IntegerField(default=DEFAULT_VM_CONFIG.get('memory', 524288))
     host_passthrough = models.BooleanField(default=DEFAULT_VM_CONFIG.get('host_passthrough', False))
-    create_time = models.DateTimeField()
+    create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
     note = models.TextField(null=True, blank=True)
 
