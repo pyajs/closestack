@@ -9,17 +9,14 @@
 """
 
 import json
-from ..utils import utils
 from json.decoder import JSONDecodeError
-from ..response import success, failed
-from ..models import VmTemplate
-from django.views import View
-from django.db import IntegrityError
-from django.db.models import Q
-import operator
-from closestack.models import VmTemplate
-from functools import reduce
 
+from django.db import IntegrityError
+from django.views import View
+
+from closestack.models import VmTemplate
+from ..response import success, failed
+from ..utils import utils
 
 __author__ = 'knktc'
 __version__ = '0.1'
@@ -142,6 +139,6 @@ class VmTemplateListView(View):
 
 
 class VmTemplateDetailView(View):
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ['get', 'patch', 'delete']
 
 
