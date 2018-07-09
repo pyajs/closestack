@@ -28,7 +28,9 @@ SCHEMA = {
         "name": {"type": "string"},
         "enable": {"type": "boolean"},
         "image_path": {"type": "string", "maxLength": 1024},
-        "config": {"type": "object"},
+        "cpu": {"type": "integer", "minimum": 1},
+        "memory": {"type": "integer", "minimum": 131072},
+        "host_passthrough": {"type": "boolean"},
         "note": {"type": "string"}
     }
 }
@@ -82,6 +84,18 @@ class VmTemplateListView(View):
         }
         return success(data=data)
 
+    @staticmethod
+    def get(request):
+        """
+        get vm template list
+        :param :
+        :return: template list
+        :rtype:
+        """
+        pass
+
 
 class VmTemplateDetailView(View):
-    pass
+    http_method_names = ['get', 'post', 'patch', 'delete']
+
+
