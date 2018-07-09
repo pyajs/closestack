@@ -73,6 +73,9 @@ VM_NODES = {
         'qemu_img_exec': QEMU_IMG_EXEC,
         'qemu_kvm_exec': QEMU_KVM_EXEC,
 
+        # dir to store template images, should be a mounted NFS drive
+        'image_dir': '/opt/closestack/images',
+
         # dir to store the running images, a SSD is recommended
         'running_image_dir': '/opt/closestack/running',
 
@@ -87,6 +90,7 @@ VM_NODES = {
         'conn': 'qemu+ssh://root@node2.myhost:22/system',
         'qemu_img_exec': QEMU_IMG_EXEC,
         'qemu_kvm_exec': QEMU_KVM_EXEC,
+        'image_dir': '/opt/closestack/images',
         'running_image_dir': '/opt/closestack/running',
         'vm_template': 'vm_template_for_fedora.xml'
     },
