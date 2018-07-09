@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 from .errors import ERRORS
-from config import VM_NODES, VM_TEMPLATE_FILEPATH, NOVNC_TOKEN_DIR, NOVNC_HOST, NOVNC_PORT, DEBUG, \
+from config import VM_NODES, VM_TEMPLATE_DIR, NOVNC_TOKEN_DIR, NOVNC_HOST, NOVNC_PORT, DEBUG, \
     DATABASE as DB_CONF, DEFAULT_VM_CONFIG
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -123,7 +123,3 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
-
-# read vm template file
-with open(VM_TEMPLATE_FILEPATH, 'rb') as f:
-    VM_TEMPLATE = f.read()
