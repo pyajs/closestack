@@ -44,5 +44,6 @@ class VmRunning(VmTemplate):
         (4, 'discard'),
         (5, 'deleted'),
     ), default=0)
-    node = models.CharField(max_length=64)
+    persistent = models.BooleanField(default=True)
+    node = models.CharField(max_length=1024)
     vnc_token = models.CharField(max_length=64)
