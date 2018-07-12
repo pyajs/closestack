@@ -23,7 +23,7 @@ class NodeManager(object):
         :rtype:
         """
         self.nodes = nodes
-        self.hr = HashRing(nodes=nodes.keys(), hash_fn='ketama')
+        self.hr = HashRing(nodes=nodes, hash_fn='ketama')
 
     def get_node(self, key):
         """
