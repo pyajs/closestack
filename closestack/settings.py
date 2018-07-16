@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 import os
 from .errors import ERRORS
 from config import VM_NODES, VM_TEMPLATE_DIR, NOVNC_TOKEN_DIR, NOVNC_HOST, NOVNC_PORT, DEBUG, \
-    DATABASE as DB_CONF, DEFAULT_VM_CONFIG
+    DATABASE as DB_CONF, DEFAULT_VM_CONFIG, SSH_PATH
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

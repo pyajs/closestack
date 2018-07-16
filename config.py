@@ -54,6 +54,9 @@ for ubuntu, please help us to figure out the settings
 QEMU_IMG_EXEC = '/usr/bin/qemu-img'
 QEMU_KVM_EXEC = '/usr/libexec/qemu-kvm'
 
+# SSH path
+SSH_PATH = '/user/bin/ssh'
+
 # dir to store VM config xml templates
 VM_TEMPLATE_DIR = os.path.join(SCRIPT_DIR, 'vm_templates')
 
