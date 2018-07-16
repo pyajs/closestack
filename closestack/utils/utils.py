@@ -104,6 +104,7 @@ def validate_vm_config(vm_config):
     template_id = vm_config.get('template_id')
     try:
         template_obj = VmTemplate.objects.get(id=template_id)
+        vm_config['base_image_path'] = template_obj.image_path
     except ObjectDoesNotExist:
         return 1, None
 
