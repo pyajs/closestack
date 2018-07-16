@@ -23,5 +23,11 @@ ERRORS = {
     # vm template api errors
     1001001: 'vm template names duplicated',
 
+    # vm manager api errors
+    1002001: 'template not exists',
+    1002002: 'cpu does not reach minimum requirements',
+    1002003: 'memory doest not reach minimum requirements',
+    1002004: 'host_passthrough config needed',
+    1002005: 'vm name duplicated',
 
 }
