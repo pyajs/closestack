@@ -18,12 +18,11 @@ __version__ = '0.1'
 DEFAULT_VM_CONFIG = settings.DEFAULT_VM_CONFIG.copy()
 
 
-# VM templates
-class VmTemplate(models.Model):
+# base model
+class BaseModel(models.Model):
     name = models.CharField(max_length=64, unique=True)
     enable = models.BooleanField(default=True)
     image_path = models.CharField(max_length=1024)
-    # minimum vm config
     cpu = models.IntegerField(default=DEFAULT_VM_CONFIG.get('cpu', 1))
     memory = models.IntegerField(default=DEFAULT_VM_CONFIG.get('memory', 524288))
     host_passthrough = models.BooleanField(default=DEFAULT_VM_CONFIG.get('host_passthrough', False))
@@ -31,13 +30,20 @@ class VmTemplate(models.Model):
     update_time = models.DateTimeField(auto_now=True)
     note = models.TextField(null=True, blank=True)
 
+    class Meta:
+        abstract = True
+
+
+# VM templates
+class VmTemplate(BaseModel):
+    pass
+
 
 # store recorded VMs' info
-class VmRunning(VmTemplate):
-    name = None
+class VmRunning(BaseModel):
+    name = models.CharField(max_length=64)
     enable = None
-    vm_name = models.CharField(max_length=64)
-    template = models.ForeignKey(VmTemplate, on_delete=models.PROTECT, related_name='template_name')
+    template = models.ForeignKey(VmTemplate, on_delete=models.PROTECT)
     state = models.IntegerField(choices=(
         (0, 'pending'),
         (1, 'stopped'),
