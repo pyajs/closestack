@@ -101,7 +101,7 @@ def validate_vm_config(vm_config):
 
     """
     # check template id
-    template_id = vm_config.get('template')
+    template_id = vm_config.get('template_id')
     try:
         template_obj = VmTemplate.objects.get(id=template_id)
     except ObjectDoesNotExist:
@@ -128,11 +128,6 @@ def validate_vm_config(vm_config):
         vm_config['host_passthrough'] = template_obj.host_passthrough
     elif template_obj.host_passthrough and not host_passthrough:
         return 4, None
-
-    # check vm name
-    name = vm_config.get('name')
-    if VmRunning.objects.filter(name=name).exists():
-        return 5, None
 
     # other params
     vm_config.setdefault('persistent', True)

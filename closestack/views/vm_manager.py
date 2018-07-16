@@ -13,9 +13,11 @@ from json.decoder import JSONDecodeError
 
 from django.conf import settings
 from django.views import View
-from ..utils.node_utils import NodeManager
-from ..response import success, failed
-from ..utils import utils
+from closestack.utils.node_utils import NodeManager
+from closestack.response import success, failed
+from closestack.utils import utils
+from closestack.models import VmRunning, VmTemplate
+from closestack.utils.vm_utils import VmManager
 
 
 __author__ = 'knktc'
@@ -28,7 +30,7 @@ SCHEMA = {
     "type": "object",
     "properties": {
         "name": {"type": "string"},
-        "template": {"type": "integer"},
+        "template_id": {"type": "integer"},
         "cpu": {"type": "integer", "minimum": 1},
         "memory": {"type": "integer", "minimum": 131072},
         "host_passthrough": {"type": "boolean"},
@@ -44,8 +46,8 @@ CONFIG_VALIDATE_ERRORS = {
     2: 1002002,
     3: 1002003,
     4: 1002004,
-    5: 1002005,
 }
+
 
 class VmManagerView(View):
     http_method_names = ['get', 'post']
@@ -67,7 +69,7 @@ class VmManagerView(View):
 
         # validate request data
         schema = SCHEMA.copy()
-        schema['required'] = ['name', 'template', ]
+        schema['required'] = ['name', 'template_id', ]
         validate_result, msg = utils.validate_json(data=request_content, schema=schema)
         if validate_result != 0:
             return failed(status=1000001, msg=msg)
@@ -80,16 +82,23 @@ class VmManagerView(View):
         else:
             return failed(status=CONFIG_VALIDATE_ERRORS.get(validate_result))
 
-        # create vm
+        # get auto start flag
+        auto_start = vm_config.pop('auto_start')
 
+        # create vm
+        # get node
+        name = vm_config.get('name')
+        node_info = NODE_MANAGER.get_node(key=name)
+        vm_config['node'] = json.dumps(node_info)
+
+        # write vm running info with pending state
+        vm_obj = VmRunning(**vm_config)
+        vm_obj.save()
+        vm_id = vm_obj.id
+
+        # clone vm
 
 
         return success(data=vm_config)
-
-
-
-
-
-
 
 

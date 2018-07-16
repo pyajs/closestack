@@ -34,7 +34,9 @@ class VmTemplate(models.Model):
 
 # store recorded VMs' info
 class VmRunning(VmTemplate):
+    name = None
     enable = None
+    vm_name = models.CharField(max_length=64)
     template = models.ForeignKey(VmTemplate, on_delete=models.PROTECT, related_name='template_name')
     state = models.IntegerField(choices=(
         (0, 'pending'),

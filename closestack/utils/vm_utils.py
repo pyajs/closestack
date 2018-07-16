@@ -250,3 +250,4 @@ class VmManager(object):
         info['vnc_port'] = graphics.get('port')
 
         return info
+
