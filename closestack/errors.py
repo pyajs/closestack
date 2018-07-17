@@ -31,6 +31,8 @@ ERRORS = {
     1002005: 'vm name duplicated',
     1002006: 'node connection failed',
     1002007: 'create running image failed',
-
+    1002008: 'format vm xml failed',
+    1002009: 'create vm failed(unknown errors)',
+    1002010: 'create vm success, but boot failed',
 
 }
