@@ -30,8 +30,8 @@ class NovncManager(object):
         :param host: vnc host
         :param vnc_port: vnc port
         :param permanent: if not permanent, the token file may be cleaned by a contab task
-        :return: create result or
-        :rtype: tuple
+        :return: create result or None
+        :rtype: dict
         """
         token = str(uuid.uuid4())
         if permanent:
@@ -52,9 +52,9 @@ class NovncManager(object):
                 'vnc_port': vnc_port,
                 'permanent': permanent
             }
-            return True, result
+            return result
         except:
-            return False, None
+            return None
 
     def remove_token(self, token, permanent=False):
         """
