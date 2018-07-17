@@ -135,3 +135,22 @@ def validate_vm_config(vm_config):
     vm_config.setdefault('auto_start', True)
 
     return 0, vm_config
+
+
+def ssh_remove_file(ssh_host, ssh_user, file_to_remove, ssh_port=22, ssh_path='/usr/bin/ssh'):
+    """
+    use ssh to remove remote file
+    :param ssh_path: ssh command path, default /usr/bin/ssh
+    :param file_to_remove: the file path
+    :param ssh_user: ssh user, make sure you have permission to remove the file
+    :param ssh_port: ssh port, default 22
+    :param ssh_host: ssh host
+    :return: remove result
+    :rtype: bool
+    """
+    cmd = "{} -p {} {}@{} rm -f '{}'".format(ssh_path, ssh_port, ssh_user, ssh_host, file_to_remove)
+    code, stdout, stderr = cmd_runner(cmd=cmd)
+    if code == 0:
+        return True
+    else:
+        return False
