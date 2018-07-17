@@ -42,6 +42,7 @@ class VmTemplate(BaseModel):
 # store recorded VMs' info
 class VmRunning(BaseModel):
     name = models.CharField(max_length=64)
+    vm_name = models.CharField(max_length=36, blank=True, null=True)
     enable = None
     template = models.ForeignKey(VmTemplate, on_delete=models.PROTECT)
     state = models.IntegerField(choices=(

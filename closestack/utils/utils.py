@@ -79,7 +79,7 @@ def format_vm_xml(template, config_dict):
     try:
         formated_xml = Template(template).substitute(config_dict)
         return formated_xml
-    except:
+    except Exception as e:
         return None
 
 

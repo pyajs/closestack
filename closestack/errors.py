@@ -29,5 +29,8 @@ ERRORS = {
     1002003: 'memory doest not reach minimum requirements',
     1002004: 'host_passthrough config needed',
     1002005: 'vm name duplicated',
+    1002006: 'node connection failed',
+    1002007: 'create running image failed',
+
 
 }

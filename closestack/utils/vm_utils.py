@@ -133,13 +133,13 @@ class VmManager(object):
 
         # add host passthrough config
         if host_passthrough:
-            config_dict['host_passthrought'] = "<cpu mode='host-passthrough' check='none'/>"
+            config_dict['host_passthrough'] = "<cpu mode='host-passthrough' check='none'/>"
         else:
-            config_dict['host_passthrought'] = ''
+            config_dict['host_passthrough'] = ''
 
         # format xml
         xml_config = format_vm_xml(template=self.template, config_dict=config_dict)
-        if xml_config:
+        if not xml_config:
             return 1
 
         # create vm

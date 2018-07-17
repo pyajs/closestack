@@ -8,7 +8,9 @@
 @create:2018-07-01 22:08
 """
 
+import os
 import json
+import uuid
 from json.decoder import JSONDecodeError
 
 from django.conf import settings
@@ -17,7 +19,7 @@ from closestack.utils.node_utils import NodeManager
 from closestack.response import success, failed
 from closestack.utils import utils
 from closestack.models import VmRunning, VmTemplate
-from closestack.utils.vm_utils import VmManager
+from closestack.utils.vm_utils import VmManager, VmManagerError
 
 
 __author__ = 'knktc'
@@ -82,8 +84,9 @@ class VmManagerView(View):
         else:
             return failed(status=CONFIG_VALIDATE_ERRORS.get(validate_result))
 
-        # get auto start flag
+        # pop some args
         auto_start = vm_config.pop('auto_start')
+        base_image_path = vm_config.pop('base_image_path')
 
         # create vm
         # get node
@@ -97,8 +100,57 @@ class VmManagerView(View):
         vm_id = vm_obj.id
 
         # clone vm
+        # connect to vm manager
+        try:
+            vm_manager = VmManager(conn_str=node_info.get('conn'),
+                                   qemu_img_exec=node_info.get('qemu_img_exec'),
+                                   qemu_kvm_exec=node_info.get('qemu_kvm_exec'),
+                                   template_path=os.path.join(settings.VM_TEMPLATE_DIR, node_info.get('vm_template')),
+                                   ssh_path=settings.SSH_PATH)
+        except VmManagerError:
+            return failed(status=1002006)
+
+        # create image
+        base_image_path = os.path.join(node_info.get('image_dir'), base_image_path)
+        running_image_path = os.path.join(node_info.get('running_image_dir'), '{}.token'.format(str(uuid.uuid4())))
+
+        status = vm_manager.create_image(base_image_path=base_image_path, new_image_path=running_image_path,
+                                         host=node_info.get('host'),
+                                         ssh_user=node_info.get('ssh_user'),
+                                         ssh_port=node_info.get('ssh_port'),
+                                         )
+        # create image success, write image path
+        if status:
+            vm_obj.image_path = running_image_path
+            vm_obj.save()
+        else:
+            return failed(status=1002007)
+
+        # define vm
+        vm_name = str(uuid.uuid4())
+        print(vm_name)
+        status = vm_manager.define(vm_name=vm_name, image_path=running_image_path,
+                                   cpu_cores=vm_config.get('cpu'),
+                                   memory=vm_config.get('memory'),
+                                   host_passthrough=vm_config.get('host_passthrough'),
+                                   persistent=False,
+                                   boot=auto_start)
+        if status == 0:
+            pass
+        else:
+            return failed(status=status, msg='create vm failed')
+
+        # get vnc port if vm is started
+        domain = vm_manager.get_domain_obj(vm_name=vm_name)
+
+        if domain is not None and vm_manager.check_running_state(domain=domain):
+            vm_info = vm_manager.get_info(domain=domain)
+
+        print(vm_info)
+
+        # close connection
+        vm_manager.close()
 
 
         return success(data=vm_config)
-
 
