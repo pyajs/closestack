@@ -12,6 +12,8 @@ import subprocess
 from string import Template
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError, SchemaError
+from closestack.models import VmTemplate, VmRunning
+from django.core.exceptions import ObjectDoesNotExist
 
 __author__ = 'knktc'
 __version__ = '0.1'
@@ -77,5 +79,78 @@ def format_vm_xml(template, config_dict):
     try:
         formated_xml = Template(template).substitute(config_dict)
         return formated_xml
-    except:
+    except Exception as e:
         return None
+
+
+def validate_vm_config(vm_config):
+    """
+    valiate vm config, return validation result and vm config
+    :param vm_config: raw vm config dict
+    :return: validation result and vm config
+    :rtype: tuple
+
+    # status
+    =========
+    0: success
+    1: template ID not exists
+    2: cpu does not reach minimum requirements
+    3: memory doest not reach minimum requirements
+    4: host_passthrough config needed
+    5: vm name duplicated
+
+    """
+    # check template id
+    template_id = vm_config.get('template_id')
+    try:
+        template_obj = VmTemplate.objects.get(id=template_id)
+        vm_config['base_image_path'] = template_obj.image_path
+    except ObjectDoesNotExist:
+        return 1, None
+
+    # validate minimum vm config
+    # cpu
+    cpu = vm_config.get('cpu')
+    if cpu is None:
+        vm_config['cpu'] = template_obj.cpu
+    elif cpu < template_obj.cpu:
+        return 2, None
+
+    # memory
+    memory = vm_config.get('memory')
+    if memory is None:
+        vm_config['memory'] = template_obj.memory
+    elif memory < template_obj.memory:
+        return 3, None
+
+    # host_passthrough
+    host_passthrough = vm_config.get('host_passthrough')
+    if host_passthrough is None:
+        vm_config['host_passthrough'] = template_obj.host_passthrough
+    elif template_obj.host_passthrough and not host_passthrough:
+        return 4, None
+
+    # other params
+    vm_config.setdefault('persistent', True)
+    vm_config.setdefault('auto_start', True)
+
+    return 0, vm_config
+
+
+def ssh_remove_file(ssh_host, ssh_user, file_to_remove, ssh_port=22, ssh_path='/usr/bin/ssh'):
+    """
+    use ssh to remove remote file
+    :param ssh_path: ssh command path, default /usr/bin/ssh
+    :param file_to_remove: the file path
+    :param ssh_user: ssh user, make sure you have permission to remove the file
+    :param ssh_port: ssh port, default 22
+    :param ssh_host: ssh host
+    :return: remove result
+    :rtype: bool
+    """
+    cmd = "{} -p {} {}@{} rm -f '{}'".format(ssh_path, ssh_port, ssh_user, ssh_host, file_to_remove)
+    code, stdout, stderr = cmd_runner(cmd=cmd)
+    if code == 0:
+        return True
+    else:
+        return False

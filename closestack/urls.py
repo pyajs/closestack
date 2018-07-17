@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from .views import index, vm_template
+from .views import index, vm_template, vm_manager
 from django.views.decorators.csrf import csrf_exempt
 
 urlpatterns = [
@@ -26,5 +26,10 @@ urlpatterns = [
 
     # vm template
     path('template/', csrf_exempt(vm_template.VmTemplateListView.as_view())),
+
+    # vm manager
+    path('vms/', csrf_exempt(vm_manager.VmManagerView.as_view())),
+
+
 
 ]
