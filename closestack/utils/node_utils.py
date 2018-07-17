@@ -33,7 +33,9 @@ class NodeManager(object):
         :rtype:
         """
         node_name = self.hr.get_node(key)
-        return self.nodes.get(node_name)
+        node_info = self.nodes.get(node_name)
+        node_info['name'] = node_name
+        return node_info
 
     def add_node(self):
         """
