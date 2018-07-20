@@ -15,6 +15,7 @@ from json.decoder import JSONDecodeError
 
 from django.conf import settings
 from django.views import View
+from django.core.exceptions import ObjectDoesNotExist
 from closestack.utils.node_utils import NodeManager
 from closestack.response import success, failed
 from closestack.utils import utils
@@ -44,6 +45,15 @@ SCHEMA = {
         "auto_start": {"type": "boolean"},
         "note": {"type": "string"}
     }
+}
+
+AVAILABLE_ACTIONS = ['rebuild', 'boot', 'reboot', 'shutdown', 'delete']
+ACTION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "action": {"type": "string", "enum": AVAILABLE_ACTIONS}
+    },
+    "required": ["action"]
 }
 
 # errors
@@ -147,7 +157,8 @@ class VmManagerView(View):
                                    persistent=vm_config.get('persistent'),
                                    boot=auto_start)
         if status == 0:
-            pass
+            vm_obj.vm_name = vm_name
+            vm_obj.save()
         else:
             # set vm to discard
             vm_obj.state = 4
@@ -174,6 +185,119 @@ class VmManagerView(View):
         # add some info
         vm_config['id'] = vm_id
         vm_config['node'] = node_info.get('name')
+        vm_config['vm_name'] = vm_name
 
         return success(data=vm_config)
+
+
+class VmActionView(View):
+    http_method_names = ['get', 'post']
+
+
+    def get_vm_obj(self, vm_id):
+        """
+        get vm info by vm_id
+        :param :
+        :return:
+        :rtype:
+        """
+        try:
+            vm_obj = VmRunning.objects.get(id=vm_id)
+            return vm_obj
+        except ObjectDoesNotExist:
+            return None
+
+    def get_vm_manager(self, node_info):
+        """
+        get vm manager object
+        :param node_info: node info
+        :return:
+        :rtype:
+        """
+        try:
+            vm_manager = VmManager(conn_str=node_info.get('conn'),
+                                   qemu_img_exec=node_info.get('qemu_img_exec'),
+                                   qemu_kvm_exec=node_info.get('qemu_kvm_exec'),
+                                   template_path=os.path.join(settings.VM_TEMPLATE_DIR, node_info.get('vm_template')),
+                                   ssh_path=settings.SSH_PATH)
+            return vm_manager
+        except VmManagerError:
+            return None
+
+
+    def boot(self, vm_manager, vm_obj):
+        """ 
+        boot vm
+        :param :  
+        :return:
+        :rtype: 
+        """
+        vm_name = vm_obj.vm_name
+
+        domain = vm_manager.get_domain_obj(vm_name=vm_name)
+        if not domain:
+            return 1002012
+        status = vm_manager.start(domain)
+        if status:
+            return 0
+        else:
+            return 1002013
+        
+    def disconnect(self, vm_manager):
+        """ 
+        close connection to vm manager
+
+        :param :  
+        :return:
+        :rtype: 
+        """
+        vm_manager.close()
+
+
+    def post(self, request, **kwargs):
+        """
+        perform vm actions
+        :param :
+        :return:
+        :rtype:
+        """
+        # get vm id
+        vm_id = kwargs.get('id')
+
+        # load request json
+        try:
+            request_content = json.loads(request.body)
+        except JSONDecodeError as e:
+            return failed(status=1000001)
+
+        # validate request data
+        schema = ACTION_SCHEMA.copy()
+        validate_result, msg = utils.validate_json(data=request_content, schema=schema)
+        if validate_result != 0:
+            return failed(status=1000001, msg=msg)
+
+        # check vm_id
+        vm_obj = self.get_vm_obj(vm_id=vm_id)
+        if not vm_obj:
+            return failed(status=1002011)
+
+        # get vm manager
+        vm_manager = self.get_vm_manager(json.loads(vm_obj.node))
+        if not vm_manager:
+            return failed(status=1002006)
+
+        # get action
+        action = request_content.get('action')
+        status = getattr(self, action)(vm_manager, vm_obj)
+
+
+        # disconnect vm manager
+        self.disconnect(vm_manager=vm_manager)
+
+
+        if status == 0:
+            return success(data={'1': 2})
+        else:
+            return failed(status=status)
+
 
