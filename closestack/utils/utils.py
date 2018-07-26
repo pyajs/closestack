@@ -7,13 +7,17 @@
 @create:2018-05-26 11:59
 """
 
+import json
 import shlex
 import subprocess
+from json.decoder import JSONDecodeError
 from string import Template
+
+from django.core.exceptions import ObjectDoesNotExist
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError, SchemaError
-from closestack.models import VmTemplate, VmRunning
-from django.core.exceptions import ObjectDoesNotExist
+
+from closestack.models import VmTemplate
 
 __author__ = 'knktc'
 __version__ = '0.1'
@@ -154,3 +158,27 @@ def ssh_remove_file(ssh_host, ssh_user, file_to_remove, ssh_port=22, ssh_path='/
         return True
     else:
         return False
+
+
+def validate_request(request, schema, required_fields):
+    """
+    validate request
+    :param required_fields: required fields as a list
+    :param schema: jsonschema
+    :param request: http request object
+    :return: json loaded request body and error message
+    :rtype: tuple
+    """
+    # load request json
+    try:
+        request_content = json.loads(request.body)
+    except JSONDecodeError as e:
+        return None, 'json data decord failed'
+
+    # validate request data with jsonschema
+    schema['required'] = required_fields
+    validate_result, msg = validate_json(data=request_content, schema=schema)
+    if validate_result != 0:
+        return None, msg
+
+    return request_content, None
