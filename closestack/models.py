@@ -52,6 +52,7 @@ class VmRunning(BaseModel):
         (3, 'destroyed'),
         (4, 'discard'),
         (5, 'deleted'),
+        (6, 'failed'),
     ), default=0)
     persistent = models.BooleanField(default=True)
     node = models.CharField(max_length=1024)
