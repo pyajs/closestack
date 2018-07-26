@@ -55,5 +55,5 @@ class VmRunning(BaseModel):
         (6, 'failed'),
     ), default=0)
     persistent = models.BooleanField(default=True)
-    node = models.CharField(max_length=1024)
+    node = models.CharField(max_length=1024, blank=True, null=True)
     vnc_token = models.CharField(max_length=64)
