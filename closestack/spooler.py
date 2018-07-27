@@ -10,7 +10,7 @@
 
 import json
 import uwsgi
-from closestack.utils import spooler_workers
+from closestack.utils.spooler_worker import SpoolerWorker
 
 __author__ = 'knktc'
 __version__ = '0.1'
@@ -25,7 +25,8 @@ def worker_dispatcher(arguments):
     """
     config = json.loads(arguments.get('body').decode('utf8'))
     action = config.get('action')
-    status = getattr(spooler_workers, action)(config)
+    spooler_worker = SpoolerWorker(vm_config=config)
+    status = getattr(spooler_worker, action)()
 
     return uwsgi.SPOOL_OK
 

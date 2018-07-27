@@ -137,7 +137,8 @@ class VmManagerDetailView(View):
             'name': vm_obj.name,
             'template': vm_obj.template_id,
             'state': vm_obj.state,
-            'node': json.loads(vm_obj.node) if vm_obj.node is not None else None
+            'node': json.loads(vm_obj.node) if vm_obj.node is not None else None,
+            'note': vm_obj.note,
         }
 
         return success(data=result)
