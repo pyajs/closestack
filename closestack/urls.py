@@ -28,7 +28,8 @@ urlpatterns = [
     path('template/', csrf_exempt(vm_template.VmTemplateListView.as_view())),
 
     # vm manager
-    path('vms/', csrf_exempt(vm_manager.VmManagerView.as_view())),
+    path('vms/', csrf_exempt(vm_manager.VmManagerListView.as_view())),
+    path('vms/<int:id>/', csrf_exempt(vm_manager.VmManagerDetailView.as_view())),
 
     # vm actions
     path('vms/<int:id>/action', csrf_exempt(vm_manager.VmActionView.as_view())),
