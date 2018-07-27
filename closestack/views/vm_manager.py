@@ -10,23 +10,15 @@
 
 import json
 
-from django.conf import settings
 from django.views import View
-from django.core.exceptions import ObjectDoesNotExist
-from closestack.utils.node_utils import NodeManager
 from closestack.response import success, failed
 from closestack.utils import utils, spooler_utils
-from closestack.models import VmRunning, VmTemplate
-from closestack.utils.novnc_utils import NovncManager
+from closestack.models import VmRunning
 from closestack.utils import vm_model_utils
 
 
 __author__ = 'knktc'
 __version__ = '0.1'
-
-
-NODE_MANAGER = NodeManager(nodes=settings.VM_NODES)
-NOVNC_MANAGER = NovncManager(token_dir=settings.NOVNC_TOKEN_DIR)
 
 
 # schema
@@ -154,24 +146,6 @@ class VmManagerDetailView(View):
 class VmActionView(View):
     http_method_names = ['post']
 
-    def boot(self, vm_obj):
-        """ 
-        boot vm
-        :param :  
-        :return:
-        :rtype: 
-        """
-        task = {
-            'action': 'boot',
-            'vm_id': vm_obj.id,
-        }
-
-        # write task to spooler
-        if spooler_utils.add_task(queue='boot', data=task):
-            return 0, None
-        else:
-            return 1002016, None
-
     def post(self, request, **kwargs):
         """
         perform vm actions
@@ -189,15 +163,19 @@ class VmActionView(View):
 
         # validate vm id
         vm_id = kwargs.get('id')
-        vm_obj = vm_model_utils.get_vm_obj(vm_id=vm_id)
-        if not vm_obj:
+        if not vm_model_utils.get_vm_obj(vm_id=vm_id):
             return failed(status=1002011)
 
         # run action
         action = request_content.get('action')
 
-        status, data = getattr(self, action)(vm_obj)
-        if status == 0:
-            return success(data=data)
+        task = {
+            'action': action,
+            'vm_id': vm_id,
+        }
+
+        # write task to spooler
+        if spooler_utils.add_task(queue=action, data=task):
+            return success()
         else:
-            return failed(status=status)
+            return failed(status=1002015)
