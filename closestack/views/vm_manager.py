@@ -22,6 +22,7 @@ from closestack.utils import utils, spooler_utils
 from closestack.models import VmRunning, VmTemplate
 from closestack.utils.vm_utils import VmManager, VmManagerError
 from closestack.utils.novnc_utils import NovncManager
+from django.core import serializers
 
 
 __author__ = 'knktc'
@@ -70,7 +71,7 @@ VM_DEFINE_ERRORS = {
 }
 
 
-class VmManagerView(View):
+class VmManagerListView(View):
     http_method_names = ['get', 'post']
 
     @staticmethod
@@ -119,8 +120,38 @@ class VmManagerView(View):
 
         result = vm_config.copy()
         result.update({
-            'state': 0
+            'state': 0,
+            'vm_id': vm_obj.id,
         })
+
+        return success(data=result)
+
+
+class VmManagerDetailView(View):
+    http_method_names = ['get']
+
+    def get(self, request, **kwargs):
+        """
+        get single vm detail by vm id
+        :param :
+        :return:
+        :rtype:
+        """
+        # get vm object
+        vm_id = kwargs.get('id')
+        try:
+            vm_obj = VmRunning.objects.get(id=vm_id)
+        except ObjectDoesNotExist:
+            return failed(status=1002011)
+
+        result = {
+            'vm_id': vm_obj.id,
+            'vm_name': vm_obj.vm_name,
+            'name': vm_obj.name,
+            'template': vm_obj.template_id,
+            'state': vm_obj.state,
+            'node': json.loads(vm_obj.node)
+        }
 
         return success(data=result)
 
