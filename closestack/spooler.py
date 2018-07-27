@@ -25,7 +25,7 @@ def worker_dispatcher(arguments):
     """
     config = json.loads(arguments.get('body').decode('utf8'))
     action = config.get('action')
-    print(getattr(spooler_workers, action)(config))
+    status = getattr(spooler_workers, action)(config)
 
     return uwsgi.SPOOL_OK
 
