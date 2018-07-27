@@ -14,8 +14,7 @@ from django.conf import settings
 from closestack.utils.vm_utils import VmManagerError, VmManager
 from closestack.utils.node_utils import NodeManager
 from closestack.utils.novnc_utils import NovncManager
-from closestack.models import VmRunning, VmTemplate
-from django.core.exceptions import ObjectDoesNotExist
+from closestack.utils import vm_model_utils
 
 __author__ = 'knktc'
 __version__ = '0.1'
@@ -23,8 +22,13 @@ __version__ = '0.1'
 NODE_MANAGER = NodeManager(nodes=settings.VM_NODES)
 NOVNC_MANAGER = NovncManager(token_dir=settings.NOVNC_TOKEN_DIR)
 # vm status
-VM_RUNNING = 1
+VM_STOPPED = 1
+VM_RUNNING = 2
+VM_DESTROYED = 3
+VM_DISCARD = 4
+VM_DELETED = 5
 VM_FAILED = 6
+VM_REBUILDING = 7
 
 
 def create(vm_config):
@@ -35,7 +39,7 @@ def create(vm_config):
     :rtype:
     """
     vm_id = vm_config.get('vm_id')
-    vm_obj = VmRunning.objects.get(id=vm_id)
+    vm_obj = vm_model_utils.get_vm_obj(vm_id=vm_id)
 
     # get node by vm name(uuid)
     vm_name = str(uuid.uuid4())
@@ -91,34 +95,53 @@ def create(vm_config):
         vm_obj.save()
         return False
 
-    # get vnc port if vm is started
+    # check vm running state
     domain = vm_manager.get_domain_obj(vm_name=vm_name)
     if domain is not None and vm_manager.check_running_state(domain=domain):
-        vm_info = vm_manager.get_info(domain=domain)
-
-        # add novnc token
-        novnc_info = NOVNC_MANAGER.add_token(host=node_info.get('host'), vnc_port=vm_info.get('vnc_port'),
-                                             vm_name=vm_name)
-        if novnc_info:
-            novnc_token = novnc_info.get('token')
-            vm_obj.vnc_token = novnc_token
-            vm_obj.save()
+        vm_obj.state = VM_RUNNING
+    else:
+        vm_obj.state = VM_STOPPED
 
     # close connection
     vm_manager.close()
 
-    vm_obj.state = VM_RUNNING
     vm_obj.save()
 
     return True
 
 
-def delete(vm_config):
+def boot(vm_config):
     """
-    delete vm
+    boot vm
     :param :
     :return:
     :rtype:
     """
-    return True
+    vm_id = vm_config.get('vm_id')
+    vm_obj = vm_model_utils.get_vm_obj(vm_id=vm_id)
+    node_info = json.loads(vm_obj.node)
+
+    # try to connect to node
+    try:
+        vm_manager = VmManager(conn_str=node_info.get('conn'),
+                               qemu_img_exec=node_info.get('qemu_img_exec'),
+                               qemu_kvm_exec=node_info.get('qemu_kvm_exec'),
+                               template_path=os.path.join(settings.VM_TEMPLATE_DIR, node_info.get('vm_template')),
+                               ssh_path=settings.SSH_PATH)
+    except VmManagerError:
+        vm_obj.state = VM_FAILED
+        vm_obj.note = 'connect to node failed'
+        return False
+
+    # boot
+    domain = vm_manager.get_domain_obj(vm_name=vm_obj.vm_name)
+    status = vm_manager.start(domain=domain)
+    if status:
+        vm_obj.state = VM_RUNNING
+        vm_obj.save()
+        return True
+    else:
+        vm_obj.state = VM_FAILED
+        vm_obj.note = 'vm boot failed'
+        vm_obj.save()
 

@@ -38,5 +38,9 @@ ERRORS = {
     1002012: 'no such vm in node',
     1002013: 'vm boot failed',
     1002014: 'vm shutdown failed',
-    1002015: 'create task failed',
+    1002015: 'send create task failed',
+    1002016: 'send boot task failed',
+    1002017: 'send create task failed',
+    1002018: 'send create task failed',
+    1002019: 'send create task failed',
 }
