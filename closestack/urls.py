@@ -30,6 +30,8 @@ urlpatterns = [
     # vm manager
     path('vms/', csrf_exempt(vm_manager.VmManagerView.as_view())),
 
+    # vm actions
+    path('vms/<int:id>/action', csrf_exempt(vm_manager.VmActionView.as_view())),
 
 
 ]

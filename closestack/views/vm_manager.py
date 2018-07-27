@@ -15,9 +15,10 @@ from json.decoder import JSONDecodeError
 
 from django.conf import settings
 from django.views import View
+from django.core.exceptions import ObjectDoesNotExist
 from closestack.utils.node_utils import NodeManager
 from closestack.response import success, failed
-from closestack.utils import utils
+from closestack.utils import utils, spooler_utils
 from closestack.models import VmRunning, VmTemplate
 from closestack.utils.vm_utils import VmManager, VmManagerError
 from closestack.utils.novnc_utils import NovncManager
@@ -46,6 +47,15 @@ SCHEMA = {
     }
 }
 
+AVAILABLE_ACTIONS = ['rebuild', 'boot', 'reboot', 'shutdown', 'delete']
+ACTION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "action": {"type": "string", "enum": AVAILABLE_ACTIONS}
+    },
+    "required": ["action"]
+}
+
 # errors
 CONFIG_VALIDATE_ERRORS = {
     1: 1002001,
@@ -71,18 +81,12 @@ class VmManagerView(View):
         :return:
         :rtype:
         """
-
-        # load request json
-        try:
-            request_content = json.loads(request.body)
-        except JSONDecodeError as e:
-            return failed(status=1000001)
-
-        # validate request data
-        schema = SCHEMA.copy()
-        schema['required'] = ['name', 'template_id', ]
-        validate_result, msg = utils.validate_json(data=request_content, schema=schema)
-        if validate_result != 0:
+        # validate request
+        required_fields = ['name', 'template_id', ]
+        request_content, msg = utils.validate_request(schema=SCHEMA.copy(),
+                                                      request=request,
+                                                      required_fields=required_fields)
+        if request_content is None:
             return failed(status=1000001, msg=msg)
 
         # validate vm config
@@ -93,87 +97,157 @@ class VmManagerView(View):
         else:
             return failed(status=CONFIG_VALIDATE_ERRORS.get(validate_result))
 
-        # pop some args
-        auto_start = vm_config.pop('auto_start')
-        base_image_path = vm_config.pop('base_image_path')
-
-        # create vm
-        # get node
-        name = vm_config.get('name')
-        node_info = NODE_MANAGER.get_node(key=name)
-        vm_config['node'] = json.dumps(node_info)
+        # form a task
+        task = vm_config.copy()
 
         # write vm running info with pending state
+        vm_config.pop('auto_start')
+        vm_config.pop('base_image_path')
         vm_obj = VmRunning(**vm_config)
         vm_obj.save()
-        vm_id = vm_obj.id
 
-        # clone vm
-        # connect to vm manager
+        task.update({
+            'action': 'create',
+            'vm_id': vm_obj.id,
+        })
+
+        # write task to spooler
+        if spooler_utils.add_task(queue='create', data=task):
+            pass
+        else:
+            return failed(status=1002015)
+
+        result = vm_config.copy()
+        result.update({
+            'state': 0
+        })
+
+        return success(data=result)
+
+
+class VmActionView(View):
+    http_method_names = ['get', 'post']
+
+    def get_vm_obj(self, vm_id):
+        """
+        get vm info by vm_id
+        :param :
+        :return:
+        :rtype:
+        """
+        try:
+            vm_obj = VmRunning.objects.get(id=vm_id)
+            return vm_obj
+        except ObjectDoesNotExist:
+            return None
+
+    def get_vm_manager(self, node_info):
+        """
+        get vm manager object
+        :param node_info: node info
+        :return:
+        :rtype:
+        """
         try:
             vm_manager = VmManager(conn_str=node_info.get('conn'),
                                    qemu_img_exec=node_info.get('qemu_img_exec'),
                                    qemu_kvm_exec=node_info.get('qemu_kvm_exec'),
                                    template_path=os.path.join(settings.VM_TEMPLATE_DIR, node_info.get('vm_template')),
                                    ssh_path=settings.SSH_PATH)
+            return vm_manager
         except VmManagerError:
-            return failed(status=1002006)
+            return None
 
-        # create image
-        base_image_path = os.path.join(node_info.get('image_dir'), base_image_path)
-        running_image_path = os.path.join(node_info.get('running_image_dir'), '{}.img'.format(str(uuid.uuid4())))
-
-        status = vm_manager.create_image(base_image_path=base_image_path, new_image_path=running_image_path,
-                                         host=node_info.get('host'),
-                                         ssh_user=node_info.get('ssh_user'),
-                                         ssh_port=node_info.get('ssh_port'),
-                                         )
-        # create image success, write image path
+    def boot(self, vm_manager, domain, **kwargs):
+        """ 
+        boot vm
+        :param :  
+        :return:
+        :rtype: 
+        """
+        status = vm_manager.start(domain=domain)
         if status:
-            vm_obj.image_path = running_image_path
-            vm_obj.save()
+            return 0
         else:
-            # set vm to discard
-            vm_obj.state = 4
-            vm_obj.save()
-            return failed(status=1002007)
+            return 1002013
 
-        # define vm
-        vm_name = str(uuid.uuid4())
-        status = vm_manager.define(vm_name=vm_name, image_path=running_image_path,
-                                   cpu_cores=vm_config.get('cpu'),
-                                   memory=vm_config.get('memory'),
-                                   host_passthrough=vm_config.get('host_passthrough'),
-                                   persistent=vm_config.get('persistent'),
-                                   boot=auto_start)
-        if status == 0:
-            pass
+    def shutdown(self, vm_manager, domain, **kwargs):
+        """
+        shutdown vm
+
+        :param :
+        :return:
+        :rtype:
+        """
+        status = vm_manager.destroy(domain=domain)
+        if status:
+            return 0
         else:
-            # set vm to discard
-            vm_obj.state = 4
-            vm_obj.save()
-            return failed(status=VM_DEFINE_ERRORS.get(status))
+            return 1002014
 
-        # get vnc port if vm is started
-        domain = vm_manager.get_domain_obj(vm_name=vm_name)
-        if domain is not None and vm_manager.check_running_state(domain=domain):
-            vm_info = vm_manager.get_info(domain=domain)
+        
+    def disconnect(self, vm_manager):
+        """ 
+        close connection to vm manager
 
-            # add novnc token
-            novnc_info = NOVNC_MANAGER.add_token(host=node_info.get('host'), vnc_port=vm_info.get('vnc_port'),
-                                                 vm_name=vm_name)
-            if novnc_info:
-                novnc_token = novnc_info.get('token')
-                vm_obj.vnc_token = novnc_token
-                vm_obj.save()
-                vm_config['novnc_token'] = novnc_token
-
-        # close connection
+        :param :  
+        :return:
+        :rtype: 
+        """
         vm_manager.close()
 
-        # add some info
-        vm_config['id'] = vm_id
-        vm_config['node'] = node_info.get('name')
 
-        return success(data=vm_config)
+    def post(self, request, **kwargs):
+        """
+        perform vm actions
+        :param :
+        :return:
+        :rtype:
+        """
+        # get vm id
+        vm_id = kwargs.get('id')
+
+        # load request json
+        try:
+            request_content = json.loads(request.body)
+        except JSONDecodeError as e:
+            return failed(status=1000001)
+
+        # validate request data
+        schema = ACTION_SCHEMA.copy()
+        validate_result, msg = utils.validate_json(data=request_content, schema=schema)
+        if validate_result != 0:
+            return failed(status=1000001, msg=msg)
+
+        # check vm_id
+        vm_obj = self.get_vm_obj(vm_id=vm_id)
+        if not vm_obj:
+            return failed(status=1002011)
+
+        # get vm manager
+        vm_manager = self.get_vm_manager(json.loads(vm_obj.node))
+        if not vm_manager:
+            return failed(status=1002006)
+
+        # get domain
+        vm_name = vm_obj.vm_name
+
+        domain = vm_manager.get_domain_obj(vm_name=vm_name)
+        if not domain:
+            return 1002012
+
+        # get action
+        action = request_content.get('action')
+        status = getattr(self, action)(vm_manager, domain)
+
+
+        # disconnect vm manager
+        self.disconnect(vm_manager=vm_manager)
+
+
+        if status == 0:
+            return success(data={'1': 2})
+        else:
+            return failed(status=status)
+
 

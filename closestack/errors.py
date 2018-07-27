@@ -34,5 +34,9 @@ ERRORS = {
     1002008: 'format vm xml failed',
     1002009: 'create vm failed(unknown errors)',
     1002010: 'create vm success, but boot failed',
-
+    1002011: 'no such vm',
+    1002012: 'no such vm in node',
+    1002013: 'vm boot failed',
+    1002014: 'vm shutdown failed',
+    1002015: 'create task failed',
 }

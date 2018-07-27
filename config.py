@@ -18,6 +18,9 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 # debug mode
 DEBUG = True
 
+# spooler dir
+SPOOLER_DIR = os.path.join(SCRIPT_DIR, 'tasks')
+
 # database config
 # you can use sqlite3 as database, for debug and development only
 DATABASE = {
