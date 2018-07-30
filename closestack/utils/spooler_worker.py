@@ -228,6 +228,9 @@ class SpoolerWorker:
         :return:
         :rtype:
         """
+        if self.vm_config.get('action') == 'create':
+            return self
+
         # connect to node
         self.vm_manager = self.connect_node(node_info=self.node_info)
         if not self.vm_manager:
