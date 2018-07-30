@@ -206,6 +206,21 @@ class SpoolerWorker:
         """
         pass
 
+    def reboot(self):
+        """
+        reboot vm
+        :param :
+        :return:
+        :rtype:
+        """
+        # shutdown
+        self.shutdown()
+
+        # boot
+        status = self.boot()
+
+        return status
+
     def __enter__(self):
         """
         connect to vm_manager and get domain
@@ -215,7 +230,7 @@ class SpoolerWorker:
         """
         # connect to node
         self.vm_manager = self.connect_node(node_info=self.node_info)
-        if self.vm_manager:
+        if not self.vm_manager:
             raise Exception
 
         # get domain
