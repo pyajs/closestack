@@ -7,15 +7,16 @@
 @create:2018-07-26 17:23
 """
 
-import os
-import sys
-import uuid
 import json
+import os
+import uuid
+
 from django.conf import settings
-from closestack.utils.vm_utils import VmManagerError, VmManager
+
+from closestack.utils import vm_model_utils, utils
 from closestack.utils.node_utils import NodeManager
 from closestack.utils.novnc_utils import NovncManager
-from closestack.utils import vm_model_utils
+from closestack.utils.vm_utils import VmManagerError, VmManager
 
 __author__ = 'knktc'
 __version__ = '0.1'
@@ -80,7 +81,6 @@ class SpoolerWorker:
             return None
         else:
             return domain
-
 
     def create(self):
         """
@@ -197,15 +197,6 @@ class SpoolerWorker:
             self.vm_obj.save()
             return False
 
-    def delete(self):
-        """
-        delete vm
-        :param :
-        :return:
-        :rtype:
-        """
-        pass
-
     def reboot(self):
         """
         reboot vm
@@ -220,6 +211,48 @@ class SpoolerWorker:
         status = self.boot()
 
         return status
+
+    def delete(self):
+        """
+        delete vm
+        :param :
+        :return:
+        :rtype:
+        """
+        # shutdown vm
+        self.shutdown()
+
+        # undefine vm
+        status = self.vm_manager.undefine(domain=self.domain)
+
+        # remove image
+        status = utils.ssh_remove_file(ssh_host=self.node_info.get('host'),
+                                       ssh_port=self.node_info.get('ssh_port'),
+                                       ssh_user=self.node_info.get('ssh_user'),
+                                       ssh_path=settings.SSH_PATH,
+                                       file_to_remove=self.vm_obj.image_path)
+        print(status)
+
+        # remove vnc token
+        vnc_token = self.vm_obj.vm_name
+        status = NOVNC_MANAGER.remove_token(token=vnc_token)
+
+        self.vm_obj.state = VM_DELETED
+        self.vm_obj.save()
+
+        return True
+
+    def rebuild(self):
+        """
+        rebuild vm
+        :param :
+        :return:
+        :rtype:
+        """
+        pass
+
+
+
 
     def __enter__(self):
         """
