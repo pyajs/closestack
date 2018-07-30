@@ -8,6 +8,7 @@
 """
 
 import os
+import sys
 import uuid
 import json
 from django.conf import settings
@@ -80,6 +81,7 @@ class SpoolerWorker:
         else:
             return domain
 
+
     def create(self):
         """
         create vm
@@ -144,7 +146,6 @@ class SpoolerWorker:
 
         return True
 
-
     def boot(self):
         """
         boot vm
@@ -152,25 +153,15 @@ class SpoolerWorker:
         :return:
         :rtype:
         """
-        # connect to node
-        vm_manager = self.connect_node(node_info=self.node_info)
-        if not vm_manager:
-            return False
-
-        # get domain
-        domain = self.get_domain(vm_manager=vm_manager)
-        if not domain:
-            return False
-
         # check running status
-        running_status = vm_manager.check_running_state(domain=domain)
+        running_status = self.vm_manager.check_running_state(domain=self.domain)
         if running_status:
             self.vm_obj.state = VM_RUNNING
             self.vm_obj.save()
             return True
 
         # boot
-        status = vm_manager.start(domain=domain)
+        status = self.vm_manager.start(domain=self.domain)
         if status:
             self.vm_obj.state = VM_RUNNING
             self.vm_obj.save()
@@ -188,22 +179,14 @@ class SpoolerWorker:
         :return:
         :rtype:
         """
-        # connect to node
-        vm_manager = self.connect_node(node_info=self.node_info)
-
-        # get domain
-        domain = self.get_domain(vm_manager=vm_manager)
-        if not domain:
-            return False
-
         # check running status
-        running_status = vm_manager.check_running_state(domain=domain)
+        running_status = self.vm_manager.check_running_state(domain=self.domain)
         if not running_status:
             self.vm_obj.state = VM_DESTROYED
             self.vm_obj.save()
             return True
 
-        status = vm_manager.destroy(domain=domain)
+        status = self.vm_manager.destroy(domain=self.domain)
         if status:
             self.vm_obj.state = VM_DESTROYED
             self.vm_obj.save()
@@ -213,5 +196,45 @@ class SpoolerWorker:
             self.vm_obj.note = 'vm shutdown failed'
             self.vm_obj.save()
             return False
+
+    def delete(self):
+        """
+        delete vm
+        :param :
+        :return:
+        :rtype:
+        """
+        pass
+
+    def __enter__(self):
+        """
+        connect to vm_manager and get domain
+        :param :
+        :return:
+        :rtype:
+        """
+        # connect to node
+        self.vm_manager = self.connect_node(node_info=self.node_info)
+        if self.vm_manager:
+            raise Exception
+
+        # get domain
+        self.domain = self.get_domain(vm_manager=self.vm_manager)
+        if not self.domain:
+            raise Exception
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        disconnect vm manager
+        :param :
+        :return:
+        :rtype:
+        """
+        try:
+            self.vm_manager.close()
+        except Exception as e:
+            pass
 
 
