@@ -34,5 +34,8 @@ urlpatterns = [
     # vm actions
     path('vms/<int:id>/action', csrf_exempt(vm_manager.VmActionView.as_view())),
 
+    # remote console
+    path('vms/<int:id>/remote-consoles', csrf_exempt(vm_manager.VmRemoteConsoleView.as_view())),
+
 
 ]

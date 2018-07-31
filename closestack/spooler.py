@@ -25,8 +25,11 @@ def worker_dispatcher(arguments):
     """
     config = json.loads(arguments.get('body').decode('utf8'))
     action = config.get('action')
-    spooler_worker = SpoolerWorker(vm_config=config)
-    status = getattr(spooler_worker, action)()
+    try:
+        with SpoolerWorker(vm_config=config) as worker:
+            getattr(worker, action)()
+    except Exception as e:
+        pass
 
     return uwsgi.SPOOL_OK
 

@@ -7,14 +7,16 @@
 @create:2018-07-26 17:23
 """
 
+import json
 import os
 import uuid
-import json
+
 from django.conf import settings
-from closestack.utils.vm_utils import VmManagerError, VmManager
+
+from closestack.utils import vm_model_utils, utils
 from closestack.utils.node_utils import NodeManager
 from closestack.utils.novnc_utils import NovncManager
-from closestack.utils import vm_model_utils
+from closestack.utils.vm_utils import VmManagerError, VmManager
 
 __author__ = 'knktc'
 __version__ = '0.1'
@@ -80,22 +82,15 @@ class SpoolerWorker:
         else:
             return domain
 
-    def create(self):
+    def create_vm(self, vm_name, node_info, vm_manager, vm_config):
         """
-        create vm
+        create vm process
         :param :
         :return:
         :rtype:
         """
-        # get node by vm name(uuid)
-        vm_name = str(uuid.uuid4())
-        node_info = NODE_MANAGER.get_node(key=vm_name)
-        self.vm_obj.node = json.dumps(node_info)
-
-        vm_manager = self.connect_node(node_info=node_info)
-
         # create image
-        base_image_path = self.vm_config.get('base_image_path')
+        base_image_path = vm_config.get('base_image_path')
         base_image_path = os.path.join(node_info.get('image_dir'), base_image_path)
         running_image_path = os.path.join(node_info.get('running_image_dir'), '{}.img'.format(str(uuid.uuid4())))
 
@@ -104,7 +99,6 @@ class SpoolerWorker:
                                          ssh_user=node_info.get('ssh_user'),
                                          ssh_port=node_info.get('ssh_port'),
                                          )
-
         # create image success, write image path
         if status:
             self.vm_obj.image_path = running_image_path
@@ -117,17 +111,25 @@ class SpoolerWorker:
 
         # define vm
         status = vm_manager.define(vm_name=vm_name, image_path=running_image_path,
-                                   cpu_cores=self.vm_config.get('cpu'),
-                                   memory=self.vm_config.get('memory'),
-                                   host_passthrough=self.vm_config.get('host_passthrough'),
-                                   persistent=self.vm_config.get('persistent'),
-                                   boot=self.vm_config.get('auto_start'))
+                                   cpu_cores=vm_config.get('cpu'),
+                                   memory=vm_config.get('memory'),
+                                   host_passthrough=vm_config.get('host_passthrough'),
+                                   persistent=vm_config.get('persistent'),
+                                   boot=vm_config.get('auto_start', True))
         if status == 0:
             self.vm_obj.vm_name = vm_name
         else:
             self.vm_obj.state = VM_FAILED
             self.vm_obj.note = 'define vm failed'
             self.vm_obj.save()
+
+            # remove image
+            utils.ssh_remove_file(ssh_host=node_info.get('host'),
+                                  ssh_port=node_info.get('ssh_port'),
+                                  ssh_user=node_info.get('ssh_user'),
+                                  ssh_path=settings.SSH_PATH,
+                                  file_to_remove=running_image_path)
+
             return False
 
         # check vm running state
@@ -137,13 +139,33 @@ class SpoolerWorker:
         else:
             self.vm_obj.state = VM_STOPPED
 
-        # close connection
-        vm_manager.close()
-
         self.vm_obj.save()
 
         return True
 
+    def create(self):
+        """
+        create vm action
+        :param :
+        :return:
+        :rtype:
+        """
+        # get node by vm name(uuid)
+        vm_name = str(uuid.uuid4())
+        node_info = NODE_MANAGER.get_node(key=vm_name)
+        self.vm_obj.node = json.dumps(node_info)
+
+        vm_manager = self.connect_node(node_info=node_info)
+
+        status = self.create_vm(vm_name=vm_name,
+                                vm_manager=vm_manager,
+                                node_info=node_info,
+                                vm_config=self.vm_config)
+
+        # close connection
+        vm_manager.close()
+
+        return status
 
     def boot(self):
         """
@@ -152,25 +174,15 @@ class SpoolerWorker:
         :return:
         :rtype:
         """
-        # connect to node
-        vm_manager = self.connect_node(node_info=self.node_info)
-        if not vm_manager:
-            return False
-
-        # get domain
-        domain = self.get_domain(vm_manager=vm_manager)
-        if not domain:
-            return False
-
         # check running status
-        running_status = vm_manager.check_running_state(domain=domain)
+        running_status = self.vm_manager.check_running_state(domain=self.domain)
         if running_status:
             self.vm_obj.state = VM_RUNNING
             self.vm_obj.save()
             return True
 
         # boot
-        status = vm_manager.start(domain=domain)
+        status = self.vm_manager.start(domain=self.domain)
         if status:
             self.vm_obj.state = VM_RUNNING
             self.vm_obj.save()
@@ -188,22 +200,14 @@ class SpoolerWorker:
         :return:
         :rtype:
         """
-        # connect to node
-        vm_manager = self.connect_node(node_info=self.node_info)
-
-        # get domain
-        domain = self.get_domain(vm_manager=vm_manager)
-        if not domain:
-            return False
-
         # check running status
-        running_status = vm_manager.check_running_state(domain=domain)
+        running_status = self.vm_manager.check_running_state(domain=self.domain)
         if not running_status:
             self.vm_obj.state = VM_DESTROYED
             self.vm_obj.save()
             return True
 
-        status = vm_manager.destroy(domain=domain)
+        status = self.vm_manager.destroy(domain=self.domain)
         if status:
             self.vm_obj.state = VM_DESTROYED
             self.vm_obj.save()
@@ -214,4 +218,108 @@ class SpoolerWorker:
             self.vm_obj.save()
             return False
 
+    def reboot(self):
+        """
+        reboot vm
+        :param :
+        :return:
+        :rtype:
+        """
+        # shutdown
+        self.shutdown()
+
+        # boot
+        status = self.boot()
+
+        return status
+
+    def delete(self):
+        """
+        delete vm
+        :param :
+        :return:
+        :rtype:
+        """
+        # shutdown vm
+        self.shutdown()
+
+        # undefine vm
+        status = self.vm_manager.undefine(domain=self.domain)
+
+        if not status:
+            self.vm_obj.state = VM_FAILED
+            self.vm_obj.note = 'vm undefine failed'
+            self.vm_obj.save()
+            return False
+
+        # remove image
+        status = utils.ssh_remove_file(ssh_host=self.node_info.get('host'),
+                                       ssh_port=self.node_info.get('ssh_port'),
+                                       ssh_user=self.node_info.get('ssh_user'),
+                                       ssh_path=settings.SSH_PATH,
+                                       file_to_remove=self.vm_obj.image_path)
+
+        # remove vnc token
+        vnc_token = self.vm_obj.vm_name
+        status = NOVNC_MANAGER.remove_token(token=vnc_token)
+
+        self.vm_obj.state = VM_DELETED
+        self.vm_obj.save()
+
+        return True
+
+    def rebuild(self):
+        """
+        rebuild vm
+        :param :
+        :return:
+        :rtype:
+        """
+        # delete old vm
+        if self.domain:
+            status = self.delete()
+
+        # todo check vm reqirements
+        # create vm
+        vm_config = self.vm_obj.__dict__
+        vm_config['base_image_path'] = self.vm_obj.template.image_path
+        status = self.create_vm(vm_name=self.vm_obj.vm_name,
+                                vm_manager=self.vm_manager,
+                                node_info=self.node_info,
+                                vm_config=vm_config)
+        return status
+
+    def __enter__(self):
+        """
+        connect to vm_manager and get domain
+        :param :
+        :return:
+        :rtype:
+        """
+        if self.vm_config.get('action') == 'create':
+            return self
+
+        # connect to node
+        self.vm_manager = self.connect_node(node_info=self.node_info)
+        if not self.vm_manager:
+            raise Exception
+
+        # get domain
+        self.domain = self.get_domain(vm_manager=self.vm_manager)
+        if not self.domain and self.vm_config.get('action') != 'rebuild':
+            raise Exception
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        disconnect vm manager
+        :param :
+        :return:
+        :rtype:
+        """
+        try:
+            self.vm_manager.close()
+        except Exception as e:
+            pass
 

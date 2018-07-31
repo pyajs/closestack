@@ -69,7 +69,7 @@ VM_NODES = {
     'node1': {
         # please make sure you've add ssh public key to the host
         'host': 'node1.myhost',
-        'ssh_port': '22',
+        'ssh_port': 22,
         'ssh_user': 'root',
 
         # we only tested qemu+ssh, and do not modify the tailing '/system'
@@ -91,7 +91,7 @@ VM_NODES = {
     # well, following is a complete node config, without comments
     'node2': {
         'host': 'node2.myhost',
-        'ssh_port': '22',
+        'ssh_port': 22,
         'ssh_user': 'root',
         'conn': 'qemu+ssh://root@node2.myhost:22/system',
         'qemu_img_exec': QEMU_IMG_EXEC,
