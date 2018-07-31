@@ -39,4 +39,5 @@ ERRORS = {
     1002013: 'vm boot failed',
     1002014: 'vm shutdown failed',
     1002015: 'send task failed',
+    1002016: 'open remote console failed',
 }

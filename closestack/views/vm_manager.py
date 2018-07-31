@@ -14,7 +14,7 @@ from django.views import View
 from closestack.response import success, failed
 from closestack.utils import utils, spooler_utils
 from closestack.models import VmRunning
-from closestack.utils import vm_model_utils
+from closestack.utils import vm_model_utils, remote_console_utils
 
 
 __author__ = 'knktc'
@@ -41,6 +41,13 @@ ACTION_SCHEMA = {
     "type": "object",
     "properties": {
         "action": {"type": "string", "enum": AVAILABLE_ACTIONS}
+    }
+}
+
+REMOTE_CONSOLE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "type": {"type": "string", "enum": ['novnc']}
     }
 }
 
@@ -180,3 +187,39 @@ class VmActionView(View):
             return success()
         else:
             return failed(status=1002015)
+
+
+class VmRemoteConsoleView(View):
+    http_method_names = ['post']
+
+    def post(self, request, **kwargs):
+        """
+        get remote console, eg. novnc
+        :param :
+        :return:
+        :rtype:
+        """
+        # validate request
+        required_fields = ['type', ]
+        request_content, msg = utils.validate_request(schema=REMOTE_CONSOLE_SCHEMA.copy(),
+                                                      request=request,
+                                                      required_fields=required_fields)
+        if request_content is None:
+            return failed(status=1000001, msg=msg)
+
+        # vlidate vm id
+        vm_id = kwargs.get('id')
+        vm_obj = vm_model_utils.get_vm_obj(vm_id=vm_id)
+        if not vm_obj:
+            return failed(status=1002011)
+
+        remote_console_type = request_content.get('type')
+        # get remote console
+        try:
+            with remote_console_utils.RemoteConsole(vm_obj=vm_obj) as remote_console:
+                result = getattr(remote_console, remote_console_type)()
+        except remote_console_utils.RemoteConsoleError as e:
+            return failed(status=1002016, msg=e.value)
+
+        return success(data=result)
+
