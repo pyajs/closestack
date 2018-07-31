@@ -27,13 +27,14 @@ class NovncManager(object):
     def add_token(self, vm_name, host, vnc_port, permanent=False):
         """
         add token file
+        :param vm_name: vm name
         :param host: vnc host
         :param vnc_port: vnc port
         :param permanent: if not permanent, the token file may be cleaned by a contab task
         :return: create result or None
         :rtype: dict
         """
-        token = vm_name
+        token = str(uuid.uuid4())
         if permanent:
             prefix = 'permanent_'
         else:
