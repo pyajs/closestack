@@ -1,4 +1,4 @@
-![123](https://img.shields.io/badge/status-developing-yellow.svg)
+![123](https://img.shields.io/badge/status-developing-yellow.svg) [![Build Status](https://travis-ci.org/pyajs/closestack.svg?branch=master)](https://travis-ci.org/pyajs/closestack)
 
 # closestack
 A simple libvirt http wrapper
