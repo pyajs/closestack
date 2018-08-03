@@ -1,0 +1,8 @@
+language: python
+python:
+  - "3.6"
+install:
+  - pip install -r requirements.txt
+  - pip install uwsgi
+script:
+  - uwsgi --socket 127.0.0.1:4041 --pyrun manage.py --pyargv test

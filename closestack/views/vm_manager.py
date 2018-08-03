@@ -120,6 +120,64 @@ class VmManagerListView(View):
 
         return success(data=result)
 
+    def get(self, request):
+        """
+        get vm list
+        :param :
+        :return:
+        :rtype:
+        """
+        # order by fields
+        order_by_fields = {'create_time', 'update_time', '-create_time', '-update_time'}
+
+        # some query args
+        limit = request.GET.get('limit', 10)
+        offset = request.GET.get('offset', 0)
+        order_by = request.GET.get('orderby', '-update_time')
+        state = request.GET.get('state')
+
+        # format query
+        query_args = {}
+
+        # check orderby field
+        if order_by not in order_by_fields:
+            order_by = '-update_time'
+
+        # filter with state
+        if not state:
+            pass
+        elif not state.isdigit():
+            pass
+        else:
+            query_args['state'] = int(state)
+
+        # get limit and offset, for pagination
+        try:
+            limit = int(limit)
+        except Exception as e:
+            limit = 10
+
+        try:
+            offset = int(offset)
+        except Exception as e:
+            offset = 0
+
+        # query
+        query_set = VmRunning.objects.filter(**query_args).order_by(order_by)
+        total = query_set.count()
+        query_set_values = query_set[offset: offset + limit].values()
+        vms = []
+        for single_query_set in query_set_values:
+            vms.append(single_query_set)
+
+        result = {
+            'total': total,
+            'vms': vms
+        }
+
+        return success(data=result)
+
+
 
 class VmManagerDetailView(View):
     http_method_names = ['get']
