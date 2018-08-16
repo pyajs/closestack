@@ -1,7 +1,16 @@
 ![123](https://img.shields.io/badge/status-developing-yellow.svg) [![Build Status](https://travis-ci.org/pyajs/closestack.svg?branch=master)](https://travis-ci.org/pyajs/closestack)
 
-# closestack
-A simple libvirt http wrapper
+# CLOSESTACK
+`CloseStack` is a simple libvirt http wrapper. Written in Django.
+
+## What it Does
+
+`CloseStack` allows you to manage KVM vms by HTTP API. It is suitable for the following scenarios:
+
+1. Single Host Machine
+2. Multiple Host Machines, but you do not want to deploy OpenStack
+3. Simple VM Lifecycle(create, destroy, undefine only)
+
 
 ## Requirements
 * CentOS 7(other linux distros may work too)
