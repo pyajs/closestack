@@ -26,6 +26,41 @@
 
 ## Installation
 
+Let's use Centos 7 as an example. (please help us to test on Ubuntu or other linux distros)
+
+### For the Controller
+
+To install libvirt-python, we should install libvirt-devel and python-devel fisrt:
+
+```bash
+yum install -y libvirt-devel python-devel
+```
+
+Then download codes and install requirements(venv is recommended, and make sure all the following steps are executed in venv):
+
+```bash
+git clone https://github.com/pyajs/closestack.git
+cd closestack
+pip install -r requirements.txt
+```
+
+Install uwsgi:
+
+```bash
+pip install uwsgi
+```
+
+Modify configs in `config.py`(instruction included) and `uwsgi.ini` file.
+
+Start the server with command:
+
+```bash
+uwsgi uwsgi.ini
+``` 
+
+
+### For the nodes
+
 
 ## Configuration
 
