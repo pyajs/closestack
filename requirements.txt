@@ -1,4 +1,4 @@
-Django==2.0.5
+django ~> 2.0.8
 jsonschema==2.6.0
 libvirt-python==4.3.0
 pytz==2018.4
